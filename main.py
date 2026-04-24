@@ -1,33 +1,28 @@
 import os
-from telethon import TelegramClient, events
-import google.generativeai as genai
+from telethon import TelegramClient
+from telethon.sessions import StringSession
 
-# ضع بياناتك هنا مباشرة بين العلامات ' '
-api_id = 26233486  # رقم الـ API ID الخاص بك
-api_hash = '9768677c77c66432f4a56a6401666872' # الـ API HASH الخاص بك
-phone = '+201125825797' # رقم هاتفك بالصيغة الدولية
-gemini_key = 'AIzaSy...' # مفتاح جيميناي الخاص بك
+# جلب البيانات من المتغيرات التي أضفتها أنت في Railway
+api_id = int(os.getenv("API_ID"))
+api_hash = os.getenv("API_HASH")
+string_session = os.getenv("STRING_SESSION")
 
-# إعداد الجلسة والذكاء الاصطناعي
-genai.configure(api_key=gemini_key)
-model = genai.GenerativeModel('gemini-1.5-flash')
-client = TelegramClient('AnasFinalSession', api_id, api_hash)
+# استخدام StringSession لضمان تسجيل دخول فوري
+client = TelegramClient(StringSession(string_session), api_id, api_hash)
 
 async def main():
-    print("جاري محاولة الاتصال...")
-    await client.start(phone=lambda: phone)
-    print("✅ تم تسجيل الدخول بنجاح! البوت يعمل الآن.")
+    # لا حاجة لطلب الكود هنا لأننا نستخدم الـ StringSession
+    await client.start()
+    print("✅ تم تشغيل البوت بنجاح يا أنس!")
+    
+    # هنا تضع أوامر البوت الخاصة بك (مثال بسيط للرد)
+    @client.on(events.NewMessage(pattern='/start'))
+    async def start(event):
+        await event.respond('أهلاً بك يا أنس، البوت يعمل الآن بنجاح!')
 
-@client.on(events.NewMessage(incoming=True))
-async def handler(event):
-    if event.is_private:
-        try:
-            response = model.generate_content(f"أنت مساعد أنس. رد على: {event.text}")
-            await event.reply(response.text)
-        except Exception as e:
-            print(f"خطأ: {e}")
+    await client.run_until_disconnected()
 
-with client:
+if __name__ == '__main__':
+    import telethon.events as events
     client.loop.run_until_complete(main())
-    client.run_until_disconnected()
     
