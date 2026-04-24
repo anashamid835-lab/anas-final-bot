@@ -1,45 +1,33 @@
 import os
 from telethon import TelegramClient, events
 import google.generativeai as genai
-import asyncio
 
-# سحب البيانات من إعدادات Railway
-api_id = os.getenv('API_ID') 
-api_hash = os.getenv('API_HASH')
-gemini_key = os.getenv('GEMINI_KEY')
-phone = os.getenv('PHONE')
+# ضع بياناتك هنا مباشرة بين العلامات ' '
+api_id = 26233486  # رقم الـ API ID الخاص بك
+api_hash = '9768677c77c66432f4a56a6401666872' # الـ API HASH الخاص بك
+phone = '+201125825797' # رقم هاتفك بالصيغة الدولية
+gemini_key = 'AIzaSy...' # مفتاح جيميناي الخاص بك
 
-# إعداد الذكاء الاصطناعي
+# إعداد الجلسة والذكاء الاصطناعي
 genai.configure(api_key=gemini_key)
 model = genai.GenerativeModel('gemini-1.5-flash')
-
-# استخدام اسم جلسة جديد تماماً لإجبار تليجرام على إرسال كود
-client = TelegramClient('AnasFinalSession', int(api_id), api_hash)
+client = TelegramClient('AnasFinalSession', api_id, api_hash)
 
 async def main():
-    print("جاري الاتصال بتليجرام...")
-    await client.connect()
-    if not await client.is_user_authorized():
-        print(f"جاري طلب كود التحقق للرقم: {phone}")
-        # إرسال طلب الكود يدوياً
-        await client.send_code_request(phone)
-        print("✅ تم إرسال الكود بنجاح! افحص تطبيق تليجرام الآن على هاتفك.")
-    else:
-        print("✅ الحساب مسجل دخول بالفعل وجاهز للعمل!")
+    print("جاري محاولة الاتصال...")
+    await client.start(phone=lambda: phone)
+    print("✅ تم تسجيل الدخول بنجاح! البوت يعمل الآن.")
 
 @client.on(events.NewMessage(incoming=True))
 async def handler(event):
-    if event.is_private and not event.out:
+    if event.is_private:
         try:
-            prompt = f"أنت 'أنس الرقمي'، مساعد ذكي. رد بذكاء على: {event.text}"
-            response = model.generate_content(prompt)
+            response = model.generate_content(f"أنت مساعد أنس. رد على: {event.text}")
             await event.reply(response.text)
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"خطأ: {e}")
 
-# تشغيل الجزء الخاص بطلب الكود أولاً
 with client:
     client.loop.run_until_complete(main())
-    print("🚀 البوت في وضع الانتظار...")
     client.run_until_disconnected()
     
