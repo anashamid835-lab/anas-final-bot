@@ -1,29 +1,24 @@
 import os
-import asyncio
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 
 # إحضار البيانات من متغيرات Railway
 API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
-SESSION = os.getenv("STRING_SESSION")
+SESSION_STR = os.getenv("STRING_SESSION")
 
-# دالة لتصحيح الجلسة
-def fix_padding(session_str):
-    if not session_str:
-        return ""
-    session_str = session_str.strip()
-    return session_str + '=' * (-len(session_str) % 4)
+# التأكد من صحة البيانات قبل التشغيل
+if not API_ID or not API_HASH or not SESSION_STR:
+    print("خطأ: تأكد من إضافة API_ID و API_HASH و STRING_SESSION في Variables")
+else:
+    # إنشاء العميل باستخدام StringSession مباشرة
+    client = TelegramClient(StringSession(SESSION_STR.strip()), int(API_ID), API_HASH)
 
-FIXED_SESSION = fix_padding(SESSION)
+    @client.on(events.NewMessage(pattern=r'\.فحص', outgoing=True))
+    async def check(event):
+        await event.edit("**تم بنجاح! البوت الآن قيد التشغيل يا أنس ✅🚀**")
 
-# التعديل الجوهري هنا: استخدام StringSession(FIXED_SESSION)
-client = TelegramClient(StringSession(FIXED_SESSION), int(API_ID), API_HASH)
-
-@client.on(events.NewMessage(pattern=r'\.فحص', outgoing=True))
-async def check(event):
-    await event.edit("**البوت شغال بنجاح يا أنس! ✅🚀**")
-
-print("جاري تشغيل البوت...")
-with client:
+    print("جاري الاتصال بتليجرام...")
+    client.start()
+    print("البوت يعمل الآن! جرب .فحص في تليجرام.")
     client.run_until_disconnected()
