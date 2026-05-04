@@ -3,7 +3,7 @@ import asyncio
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 
-# جلب البيانات من Railway وتنظيفها من أي مسافات زائدة
+# جلب البيانات من Railway
 API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
 SESSION = os.getenv("STRING_SESSION")
@@ -11,15 +11,19 @@ SESSION = os.getenv("STRING_SESSION")
 async def start_bot():
     print("... جاري تشغيل البوت")
     
-    # تنظيف الجلسة والبيانات برمجياً لضمان عدم حدوث خطأ Invalid Session
+    # تنظيف الجلسة من أي مسافات أو أسطر زائدة
     clean_session = SESSION.strip() if SESSION else None
     
+    # إضافة الحشو (Padding) اللازم إذا كان ناقصاً لضمان عمل الـ StringSession
+    if clean_session and len(clean_session) % 4 != 0:
+        clean_session += '=' * (4 - len(clean_session) % 4)
+
     if not all([API_ID, API_HASH, clean_session]):
-        print("خطأ: تأكد من إضافة المتغيرات بشكل صحيح في Railway")
+        print("خطأ: تأكد من إضافة المتغيرات API_ID و API_HASH و STRING_SESSION في Railway")
         return
 
     try:
-        # تحويل API_ID لرقم وتنظيف الـ API_HASH
+        # استخدام البيانات المنظفة لبدء الاتصال
         client = TelegramClient(
             StringSession(clean_session), 
             int(str(API_ID).strip()), 
@@ -38,13 +42,12 @@ async def start_bot():
         await client.run_until_disconnected()
 
     except Exception as e:
-        # هذا السطر سيطبع لنا نوع الخطأ بالضبط إذا فشل
         print(f"حدث خطأ أثناء الاتصال: {e}")
 
 if __name__ == '__main__':
-    # طريقة التشغيل المتوافقة مع Railway و asyncio
     try:
         asyncio.run(start_bot())
     except Exception as e:
+        # حل بديل في حال وجود Loop مفتوح مسبقاً على السيرفر
         loop = asyncio.get_event_loop()
         loop.run_until_complete(start_bot())
