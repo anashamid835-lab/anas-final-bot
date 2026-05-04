@@ -3,53 +3,48 @@ import asyncio
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 
-# جلب البيانات من متغيرات Railway
+# جلب البيانات من Railway وتنظيفها من أي مسافات زائدة
 API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
 SESSION = os.getenv("STRING_SESSION")
 
-# دالة لتصحيح نقص علامات التساوي في كود الجلسة تلقائياً
-def fix_padding(session_str):
-    if not session_str:
-        return None
-    session_str = session_str.strip()
-    return session_str + '=' * (-len(session_str) % 4)
-
-FIXED_SESSION = fix_padding(SESSION)
-
 async def start_bot():
-    print("... جاري تشغيل البوت على Railway")
+    print("... جاري تشغيل البوت")
     
-    # التأكد من أن جميع البيانات موجودة
-    if not all([API_ID, API_HASH, FIXED_SESSION]):
-        print("خطأ: تأكد من إضافة API_ID و API_HASH و STRING_SESSION في Variables على Railway")
+    # تنظيف الجلسة والبيانات برمجياً لضمان عدم حدوث خطأ Invalid Session
+    clean_session = SESSION.strip() if SESSION else None
+    
+    if not all([API_ID, API_HASH, clean_session]):
+        print("خطأ: تأكد من إضافة المتغيرات بشكل صحيح في Railway")
         return
 
     try:
-        # إنشاء العميل باستخدام StringSession
+        # تحويل API_ID لرقم وتنظيف الـ API_HASH
         client = TelegramClient(
-            StringSession(FIXED_SESSION), 
-            int(API_ID), 
-            API_HASH,
-            connection_retries=10,
-            retry_delay=5
+            StringSession(clean_session), 
+            int(str(API_ID).strip()), 
+            API_HASH.strip()
         )
 
         await client.start()
-        print("!تم الاتصال بنجاح")
+        print("---")
+        print("تم الاتصال بنجاح! البوت الآن يعمل")
+        print("---")
 
-        # أمر الفحص للتأكد من عمل البوت
         @client.on(events.NewMessage(pattern=r'\.فحص', outgoing=True))
         async def check(event):
-            await event.edit("**!البوت شغال بنجاح يا أنس 🚀✅**")
+            await event.edit("**البوت شغال تمام يا أنس! ✅**")
 
-        print("البوت الآن في وضع الاستماع...")
         await client.run_until_disconnected()
 
     except Exception as e:
-        print(f"حدث خطأ: {e}")
+        # هذا السطر سيطبع لنا نوع الخطأ بالضبط إذا فشل
+        print(f"حدث خطأ أثناء الاتصال: {e}")
 
 if __name__ == '__main__':
-    # تشغيل البوت باستخدام asyncio لضمان الاستقرار على السيرفر
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(start_bot())
+    # طريقة التشغيل المتوافقة مع Railway و asyncio
+    try:
+        asyncio.run(start_bot())
+    except Exception as e:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(start_bot())
