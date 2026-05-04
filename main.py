@@ -3,31 +3,45 @@ import asyncio
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 
-# 1. جلب البيانات من متغيرات Railway (Variables)
+# جلب البيانات من Railway
 API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
 SESSION = os.getenv("STRING_SESSION")
 
 async def start_bot():
-    print("---")
-    print("محاولة تشغيل البوت على سيرفر Railway...")
-    print("---")
+    print("... جاري تشغيل البوت")
     
-    # 2. تنظيف الجلسة من أي مسافات أو أسطر زائدة ناتجة عن النسخ
+    # تنظيف الجلسة
     clean_session = SESSION.strip() if SESSION else None
-    
-    # 3. إضافة الحشو (Padding) اللازم لضمان توافق الـ StringSession
     if clean_session and len(clean_session) % 4 != 0:
         clean_session += '=' * (4 - len(clean_session) % 4)
 
-    # التحقق من وجود المتغيرات الأساسية
     if not all([API_ID, API_HASH, clean_session]):
-        print("خطأ كاد يتسبب في انهيار البوت:")
-        print("تأكد من إضافة API_ID و API_HASH و STRING_SESSION في إعدادات Railway")
+        print("خطأ: نقص في المتغيرات")
         return
 
     try:
-        # 4. إنشاء العميل وتنظيف المدخلات (تحويل ID لرقم)
         client = TelegramClient(
             StringSession(clean_session), 
-            int(
+            int(str(API_ID).strip()), 
+            API_HASH.strip()
+        )
+
+        await client.start()
+        print("--- تم الاتصال بنجاح! ---")
+
+        @client.on(events.NewMessage(pattern=r'\.فحص', outgoing=True))
+        async def check(event):
+            await event.edit("**البوت شغال تمام يا أنس! ✅**")
+
+        await client.run_until_disconnected()
+
+    except Exception as e:
+        print(f"حدث خطأ: {e}")
+
+if __name__ == '__main__':
+    try:
+        asyncio.run(start_bot())
+    except:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(start_bot())
